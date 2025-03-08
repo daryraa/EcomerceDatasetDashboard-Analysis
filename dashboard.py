@@ -12,7 +12,7 @@ st.title("📊 E-Commerce Data Analysis Dashboard")
 # Load Data (Pastikan dataset tersedia)
 @st.cache_data
 def load_data():
-    order = pd.read_csv('data/order_full_clean.csv')
+    order = pd.read_csv('order_full_clean.csv')
     return order
 
 # Load dataset order_full_clean
