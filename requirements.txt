@@ -1,0 +1,9 @@
+pandas
+numpy
+matplotlib
+seaborn
+calendar
+matplotlib-ticker
+geodatasets
+geopandas
+shapely
