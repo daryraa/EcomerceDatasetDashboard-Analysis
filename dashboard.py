@@ -2,8 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import geopandas as gpd
-from shapely.geometry import Point
 
 # Setup halaman
 st.set_page_config(layout="wide", page_title="E-Commerce Analysis")
@@ -14,24 +12,15 @@ st.title("📊 E-Commerce Data Analysis Dashboard")
 # Load Data (Pastikan dataset tersedia)
 @st.cache_data
 def load_data():
-    customers = pd.read_csv('data/customers_dataset.csv')
-    geolocation = pd.read_csv('data/geolocation_dataset.csv')
-    order_item = pd.read_csv('data/order_items_dataset.csv')
-    order_pay = pd.read_csv('data/order_payments_dataset.csv')
-    order_rev = pd.read_csv('data/order_reviews_dataset.csv')
-    order_data = pd.read_csv('data/orders_dataset.csv')
-    product_cate = pd.read_csv('data/product_category_name_translation.csv')
-    product_data = pd.read_csv('data/products_dataset.csv')
-    seller_data = pd.read_csv('data/sellers_dataset.csv')
+    order = pd.read_csv('data/order_full_clean.csv')
+    return order
 
-    return customers, geolocation, order_item, order_pay, order_rev, order_data, product_cate, product_data, seller_data
-
-# Load semua dataset
-customers, geolocation, order_item, order_pay, order_rev, order_data, product_cate, product_data, seller_data = load_data()
+# Load dataset order_full_clean
+order = load_data()
 
 # Calculate total orders and revenue
-total_orders = order_data['order_id'].nunique()
-total_revenue = order_pay['payment_value'].sum()
+total_orders = order['order_id'].nunique()
+total_revenue = order['payment_value'].sum()
 
 # Create a metrics section at the top of your dashboard
 st.header("📊 Overview Penjualan")
@@ -51,10 +40,10 @@ st.markdown("---")
 
 # 1️⃣ **Performa Penjualan & Revenue**
 st.header("📈 Performa Penjualan & Revenue")
-order_data["order_purchase_timestamp"] = pd.to_datetime(order_data["order_purchase_timestamp"])
+order["order_purchase_timestamp"] = pd.to_datetime(order["order_purchase_timestamp"])
 
 # Convert to string format instead of Period object
-monthly_sales = order_data.groupby(order_data["order_purchase_timestamp"].dt.strftime('%Y-%m'))["order_id"].count().reset_index()
+monthly_sales = order.groupby(order["order_purchase_timestamp"].dt.strftime('%Y-%m'))["order_id"].count().reset_index()
 monthly_sales.columns = ["Bulan", "Total Transaksi"]
 
 fig, ax = plt.subplots(figsize=(10, 5))
@@ -69,8 +58,8 @@ st.write("💡 **Insight**: Tren transaksi per bulan menunjukkan fluktuasi. Stra
 
 # 2️⃣ **Produk Paling Laku & Kurang Diminati**
 st.header("🔥 Produk Terlaris & Kurang Diminati")
-top_products = order_item["product_id"].value_counts().head(5)
-least_products = order_item["product_id"].value_counts().tail(5)
+top_products = order["product_id"].value_counts().head(5)
+least_products = order["product_id"].value_counts().tail(5)
 
 col1, col2 = st.columns(2)
 with col1:
@@ -91,14 +80,13 @@ st.write("Menyiapkan data RFM...")
 
 # Assuming you have already prepared rfm_df in your code or need to prepare it here
 # For this example, I'll create a simplified version
-order_data['order_purchase_timestamp'] = pd.to_datetime(order_data['order_purchase_timestamp'])
-rfm_df = order_data.merge(order_pay, on='order_id')
+order['order_purchase_timestamp'] = pd.to_datetime(order['order_purchase_timestamp'])
 
 # Get the most recent date
-max_date = order_data['order_purchase_timestamp'].max()
+max_date = order['order_purchase_timestamp'].max()
 
 # Create customer-level RFM metrics
-rfm = rfm_df.groupby('customer_id').agg({
+rfm = order.groupby('customer_id').agg({
     'order_purchase_timestamp': lambda x: (max_date - x.max()).days,  # Recency
     'order_id': 'nunique',  # Frequency
     'payment_value': 'sum'  # Monetary
@@ -162,16 +150,16 @@ st.write("💡 **Insight**: Analisis RFM menunjukkan pelanggan-pelanggan terbaik
 st.header("⭐ Distribusi Skor Ulasan")
 
 # Basic distribution of review scores
-review_distribution = order_rev["review_score"].value_counts().sort_index()
+review_distribution = order["review_score"].value_counts().sort_index()
 st.bar_chart(review_distribution)
 
 # Prepare monthly review trend data
-order_rev['review_creation_date'] = pd.to_datetime(order_rev['review_creation_date'])
-order_rev['month'] = order_rev['review_creation_date'].dt.strftime('%Y-%m')
+order['review_creation_date'] = pd.to_datetime(order['review_creation_date'])
+order['month'] = order['review_creation_date'].dt.strftime('%Y-%m')
 
 # Create pivot table for stacked bar chart
 review_trend = pd.pivot_table(
-    data=order_rev,
+    data=order,
     index='month',
     columns='review_score',
     aggfunc='size',
@@ -195,8 +183,8 @@ st.write("💡 **Insight**: Mayoritas pelanggan puas, tetapi perlu memperhatikan
 # 6️⃣ **Performa Seller**
 st.header("🏆 Top Seller Berdasarkan Transaksi & Revenue")
 
-top_sellers_transactions = order_item["seller_id"].value_counts().head(5)
-top_sellers_revenue = order_item.groupby("seller_id")["price"].sum().sort_values(ascending=False).head(5)
+top_sellers_transactions = order["seller_id"].value_counts().head(5)
+top_sellers_revenue = order.groupby("seller_id")["payment_value"].sum().sort_values(ascending=False).head(5)
 
 col1, col2 = st.columns(2)
 with col1:
@@ -211,7 +199,7 @@ st.write("💡 **Insight**: Seller dengan transaksi dan revenue tinggi bisa dibe
 
 # 📌 **Rekomendasi Bisnis**
 st.header("📌 Rekomendasi")
-st.markdown("""
+st.markdown(""" 
 - **Optimalkan produk dengan penjualan tinggi** dengan promo dan diskon.
 - **Evaluasi dan tindaklanjuti ulasan negatif** untuk meningkatkan kualitas layanan.
 - **Dukung seller terbaik** dengan insentif agar mereka semakin berkembang.
