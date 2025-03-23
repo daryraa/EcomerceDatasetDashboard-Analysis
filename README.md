@@ -2,6 +2,8 @@
 
 Dashboard ini dibuat buat ngelihat data e-commerce dengan cara yang lebih gampang dan visual. Bisa buat ngecek performa penjualan, produk mana yang laris atau kurang diminati, ulasan pelanggan, sampai performa penjual. Kita pakai **Streamlit**, **Pandas**, **Matplotlib**, **Seaborn**, dan **Geopandas** buat bikin dashboard ini jalan.
 
+Link Dashboard : https://ecomercedatasetdashboard-analysis-test.streamlit.app/
+
 ## Sebelum Mulai 🔧
 
 Pastikan udah install **Python** atau pakai **conda** buat manajemen lingkungan kerja.
